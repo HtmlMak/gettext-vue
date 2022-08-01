@@ -173,13 +173,13 @@ function xgettext(input, options, cb) {
     const addPath = (_path) => (line) => `${_path}:${line}`;
 
     if (options['files-from']) {
-      const inputFiles = fs.readFileSync(options['files-from'], options['from-code'])
+      input = fs.readFileSync(options['files-from'], options['from-code'])
         .split('\n')
         .filter((line) => line.trim().length > 0);
     }
 
     const files = options.directory.reduce(
-      (result, directory) => result.concat(inputFiles.map(
+      (result, directory) => result.concat(input.map(
         (file) => path.join(directory, file.replace(/\\/g, path.sep)),
       )),
       [],
