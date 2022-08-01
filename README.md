@@ -1,5 +1,6 @@
+# WARNING
+This repo is [fork](https://github.com/GUI/gettext-vue/)
 # gettext-vue
-
 Extract translatable strings from [Vue](https://vuejs.org) files. By default, looks for the keywords `$t`, `$gettext`, and `$ngettext`.
 
 ## Installation

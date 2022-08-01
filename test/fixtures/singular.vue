@@ -6,6 +6,7 @@
         <p>{{ $t("\"double escape\"") }}</p>
         <p>{{ $t("word \"escaped, word\", with comma") }}</p>
         <p>{{ $t("ending with an escaped quote\"") }}</p>
+        <p>{{ $ngettext("apple", "apples", 3) }}</p>
     </div>
 </template>
 

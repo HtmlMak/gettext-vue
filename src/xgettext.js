@@ -6,8 +6,8 @@ const async = require('async');
 const fs = require('fs');
 const gt = require('gettext-parser');
 const objectAssign = require('object-assign');
-const VueParser = new require('./parser');
 const path = require('path');
+const VueParser = require('./parser');
 
 const parser = new VueParser();
 
@@ -17,7 +17,7 @@ const parser = new VueParser();
  * @param item
  * @returns {boolean}
  */
-function isObject (item) {
+function isObject(item) {
   return (item && typeof item === 'object' && !Array.isArray(item));
 }
 
@@ -27,7 +27,7 @@ function isObject (item) {
  * @param target
  * @param source
  */
-function mergeDeep (target, source) {
+function mergeDeep(target, source) {
   let dummy;
 
   if (isObject(target) && isObject(source)) {
@@ -52,11 +52,11 @@ function mergeDeep (target, source) {
 /**
  * Parse input and save the i18n strings to a PO file.
  *
- * @param Array|String input Array of files to parse or input string
- * @param Object options Options
- * @param Function cb Callback
+ * @param {Array|String} input Array of files to parse or input string
+ * @param {Object} options Options
+ * @param {Function} cb cb Callback
  */
-function xgettext (input, options, cb) {
+function xgettext(input, options, cb) {
   if (typeof options === 'function') {
     cb = options;
     options = {};
@@ -72,6 +72,7 @@ function xgettext (input, options, cb) {
   options.directory = options.directory || ['.'];
   options['from-code'] = options['from-code'] || 'utf8';
   options['force-po'] = options['force-po'] || false;
+  options.locale = options.locale || 'en';
   options['join-existing'] = options['join-existing'] || false;
 
   if (typeof options.directory === 'string') {
@@ -88,7 +89,10 @@ function xgettext (input, options, cb) {
         const msgctxt = strings[key].msgctxt || '';
         const context = translations[msgctxt] || (translations[msgctxt] = {});
         const msgid = strings[key].msgid || key;
-        context[msgid] = context[msgid] || { msgid: msgid, comments: {} };
+        context[msgid] = context[msgid] || {
+          msgid,
+          comments: {},
+        };
 
         if (msgctxt) {
           context[msgid].msgctxt = strings[key].msgctxt;
@@ -96,7 +100,7 @@ function xgettext (input, options, cb) {
 
         if (strings[key].plural) {
           context[msgid].msgid_plural = context[msgid].msgid_plural || strings[key].plural;
-          context[msgid].msgstr = ['', ''];
+          context[msgid].msgstr = options.locale === 'ru' ? ['', '', ''] : ['', ''];
         }
 
         if (!options['no-location']) {
@@ -121,7 +125,7 @@ function xgettext (input, options, cb) {
           try {
             fs.accessSync(options.output, fs.F_OK);
             existing = gt.po.parse(fs.readFileSync(options.output, {
-              encoding: options['from-code']
+              encoding: options['from-code'],
             }));
           } catch (e) {
             // ignore non-existing file
@@ -129,19 +133,22 @@ function xgettext (input, options, cb) {
 
           mergeDeep(translations, existing.translations);
         }
-
+        const headers = {
+          'content-type': `text/plain; charset=${options['from-code']}`,
+        };
+        if (options.locale === 'ru') {
+          headers['Plural-Forms'] = 'nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);';
+        }
         const po = gt.po.compile({
           charset: options['from-code'],
-          headers: {
-            'content-type': `text/plain; charset=${options['from-code']}`
-          },
-          translations: translations
+          headers,
+          translations,
         });
 
         if (writeToStdout) {
           cb(po);
         } else {
-          fs.writeFile(options.output, po, err => {
+          fs.writeFile(options.output, po, (err) => {
             if (err) {
               throw err;
             }
@@ -158,38 +165,36 @@ function xgettext (input, options, cb) {
   if (typeof input === 'string') {
     parseTemplate(
       input,
-      line => `standard input:${line}`
+      (line) => `standard input:${line}`,
     );
 
     output();
   } else {
-    const addPath = path => line => `${path}:${line}`;
+    const addPath = (_path) => (line) => `${_path}:${line}`;
 
     if (options['files-from']) {
-      input = fs.readFileSync(options['files-from'], options['from-code'])
+      const inputFiles = fs.readFileSync(options['files-from'], options['from-code'])
         .split('\n')
-        .filter(line => line.trim().length > 0);
+        .filter((line) => line.trim().length > 0);
     }
 
     const files = options.directory.reduce(
-      (result, directory) => result.concat(input.map(
-        file => path.join(directory, file.replace(/\\/g, path.sep))
+      (result, directory) => result.concat(inputFiles.map(
+        (file) => path.join(directory, file.replace(/\\/g, path.sep)),
       )),
-      []
+      [],
     );
 
-    async.parallel(files.map(function (file) {
-      return function (cb) {
-        fs.readFile(path.resolve(file), options['from-code'], (err, res) => {
-          if (err) {
-            throw err;
-          }
+    async.parallel(files.map((file) => function (cb) {
+      fs.readFile(path.resolve(file), options['from-code'], (err, res) => {
+        if (err) {
+          throw err;
+        }
 
-          parseTemplate(res, addPath(file.replace(/\\/g, '/')));
+        parseTemplate(res, addPath(file.replace(/\\/g, '/')));
 
-          cb();
-        });
-      };
+        cb();
+      });
     }), output);
   }
 }

@@ -1,6 +1,6 @@
 {
   "name": "gettext-vue",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "description": "Extract translatable strings from Vue files",
   "main": "src/parser.js",
   "bin": {
@@ -13,7 +13,7 @@
     "pretest": "eslint src/parser.js",
     "test": "ava ./test/test.js"
   },
-  "repository": "https://github.com/GUI/gettext-vue.git",
+  "repository": "https://github.com/HtmlMak/gettext-vue.git",
   "keywords": [
     "vue",
     "gettext",
@@ -24,9 +24,9 @@
   "author": "Nick Muerdter",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/GUI/gettext-vue/issues"
+    "url": "https://github.com/HtmlMak/gettext-vue/issues"
   },
-  "homepage": "https://github.com/GUI/gettext-vue",
+  "homepage": "https://github.com/HtmlMak/gettext-vue",
   "dependencies": {
     "async": "^3.2.0",
     "gettext-parser": "^4.0.2",
